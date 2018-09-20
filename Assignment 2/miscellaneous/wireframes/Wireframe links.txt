@@ -1,0 +1,14 @@
+https://wireframe.cc/l2iUJj - Home page
+https://wireframe.cc/tV8pRC - Add Athlete page
+https://wireframe.cc/NuUtWE - Add Athlete Output page
+https://wireframe.cc/eqi7uy - Add Team Page
+https://wireframe.cc/FJR0ow - Add Team Output page
+https://wireframe.cc/cDfKKg - Delete Athlete Page
+https://wireframe.cc/ykEqLq - Delete Athlete Output page
+https://wireframe.cc/d4QKCV - Search Team page
+https://wireframe.cc/IiUJAG - Search Team output page
+https://wireframe.cc/xrcNjz - Modify Athlete page
+https://wireframe.cc/HUo7KH - Modify Athlete Output page
+https://wireframe.cc/jo7yuT - Search Athlete page
+https://wireframe.cc/WHSTpP - Search Athlete Output page
+https://wireframe.cc/hIzH7w - Show Tables page

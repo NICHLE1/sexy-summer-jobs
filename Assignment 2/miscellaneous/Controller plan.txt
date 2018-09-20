@@ -1,0 +1,35 @@
+My plan is to have separate controllers for each individual page. My belief is that this will make it easier to code and simpler for the user whos looking to understand whats going on in the pages. Virtually all the controllers are only controlling two files.
+
+Controller files: 
+
+searchAthleteController.php - controls two files, searchAthlete.html.php and searchAthleteOutput.html.php.
+
+searchTeamController.php - controls two files, searchTeam.html.php and searchTeamOutput.html.php
+
+addTeamController.php controls two files, addTeam.html.php and addTeanOutput.html.php
+
+addAthleteController.php controls two files, addAthlete.html.php and addAthleteOutput.html.php
+
+modifyAthleteController.php controls two files, modifyAthlete.html.php and modifyAthleteOutput.html.php
+
+deleteAthleteController.php controls two files, deleteAthlete.html.php and deleteAthleteOutput.html.php
+
+showTables.php - acts as a type of controller. It is only controlling one file which is the showTablesOutput.html.php.
+
+Other files:
+
+cleanseData.php - does not control any files. It is included in some of the controllers in order to use its function to clean data.
+
+createTables.php - does not control any files. It is included in the resetDatabase.php file in order to reset the database to its default values.
+
+scripts.js - does not control any files. Contains a very small amount of JavaScript in order to supplement the reset button on the navigation bar.
+
+stylesheet.css - does not control any files. Is used across most pages apart from the controllers in order to style the individual pages.
+
+connect.inc.php - does not control any files. Is used across all of the controllers and in the createTables.php file in order to remotely connect to the database.
+
+resetDatabase.php - does not control any files. Has two include statements, one to reset the database and one to go to the home page. Is used when the reset button on navigation bar is clicked. 
+
+error.html.php - does not control any files. Is used when an error is found, e.g. null input on a field or foreign key restraints are incorrect.
+
+home.html.php - does not control any files. Is used to display an introduction message.

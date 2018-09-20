@@ -1,0 +1,18 @@
+# WEB 2 PROJECTS
+
+connect.inc.php # authentication details
+
+# MEALS ON WHEELS
+
+# The root folder node_modules and any sub-folders will be ignored 
+# These already come as part of node.js and are also specified as dependencies
+# in the package.json file should they need to be installed with the 'npm install' command
+app/node_modules/
+
+*.ppk # private key files used to connect to the web server
+nz-street-address.csv # quite large to upload
+
+# personal information on customers which the client does not want to be widely shared
+Client Records Meals on Wheels.xls
+client-records.csv 
+drivers.csv

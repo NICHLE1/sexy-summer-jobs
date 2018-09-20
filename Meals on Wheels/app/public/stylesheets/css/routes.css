@@ -1,0 +1,7 @@
+.restrictionMessage {
+  visibility: hidden;
+  font-weight: bold;
+  color: red; }
+
+.restrictionIcon {
+  visibility: hidden; }

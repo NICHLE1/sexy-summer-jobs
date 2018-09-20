@@ -1,0 +1,45 @@
+variables:
+  BASE_CODE_PATH: "app"
+  INDEX: "app.js"
+  PORT: 3000
+  
+stages:
+ - setup
+ # - build
+ - deploy
+
+Environment_Setup:
+  stage: setup
+  script:
+  - "/root/gitlab-ci-automation.sh"
+  tags: 
+  - project-sites
+  only:
+  - master
+
+# Build_Docker:
+#   stage: build
+#   script:
+#   - "/root/gitlab-ci-automation.sh"
+#   tags: 
+#   - project-sites
+#   only:
+#   - master
+  
+# Build_Site:
+#   stage: build
+#   script:
+#   - "/root/gitlab-ci-automation.sh"
+#   tags: 
+#   - project-sites
+#   only:
+#   - master
+  
+Service_Init:
+  stage: deploy
+  script:
+  - "/root/gitlab-ci-automation.sh"
+  tags: 
+  - project-sites
+  only:
+  - master

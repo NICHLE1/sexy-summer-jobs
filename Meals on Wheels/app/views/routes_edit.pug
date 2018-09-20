@@ -1,0 +1,138 @@
+- var days = moment.weekdays();
+
+if (route)
+    h1= "Edit route #" + route[0].id
+    div.cancel(style="position:absolute;top:2rem;right:2rem;cursor:pointer;font-weight:bold;font-size:2rem") x
+    input(type="hidden" name="id" value=route[0].id)
+
+div.row
+    div.six.columns
+        label(for="routeNameInput") Route name
+        input#routeNameInput.u-full-width(type="text" name="name" required value=route ? route[0].name : "")
+
+    div.three.columns
+        label(for="daySelect") Day
+        select#daySelect.u-full-width(name="day" required)
+            for day in days
+                option(value= day selected=route && route[0].day ? route[0].day.indexOf(day) != -1 : false)= day
+
+    div.three.columns
+        label(for="driverSelect") Driver
+        select#driverSelect.u-full-width(type="text" name="driver" required)
+            for driver in driver_list
+                option(value= driver.id selected=route && route[0].driver ? route[0].driver.indexOf(driver.lastName) != -1 : false)= driver.lastName + ", " + driver.firstName
+                
+div.row(style="margin-bottom: 2rem;position:relative")
+    div.nine.columns
+        div#mapeditid
+    div.three.columns(style="top: 0;bottom: 0;position: absolute;right: 0;overflow-y: scroll;")
+        h5 Customers
+        ul#customer_list
+            include customer_list.pug
+
+div.row
+    div.twelve.columns
+        input(type="submit")
+        if (route)
+            button.cancel(type="button") Cancel
+
+    script(type="text/javascript").
+
+        $(function(){
+            var currMarker = null;
+
+            $("#daySelect").on("change", function(){
+                var day = $(this).val();
+                $.post("/customers/day",{day:day},function(resp){
+                    $("#customer_list").empty().append(resp);
+                });
+            });
+
+            var mymap = L.map('mapeditid',{
+                center: L.latLng(-45.8788, 170.5028),
+                zoom:15,
+                worldCopyJump :true
+            });
+
+            mymap.on('mouseup', () => {
+                mymap.dragging.enable();
+                mymap.removeEventListener('mousemove');
+                var latlng = currMarker._latlng;
+                $.post("/customers/update",{id:currMarker.customer,lat:latlng.lat, lng:latlng.lng}, function(){
+                    currMarker = null;
+                });
+            });
+
+            var markerGroup = L.layerGroup().addTo(mymap);
+
+            var OpenStreetMap_Mapnik = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(mymap);
+
+            $(document).on("click","label.customer", function(evt){
+            if( evt.target.tagName === "LABEL" ) {
+                var self = $(this);
+                var lat = self.data("lat");
+                var lng = self.data("lng");
+                var id = self.data("id");
+                var customer = self.data("customer");
+                if(self.hasClass('isSelected'))
+                {
+                    self.removeClass("isSelected");
+                    if(id)
+                    {
+                    markerGroup.removeLayer(id);
+                    self.data("id","");
+                    }
+                }
+                else
+                {
+                    self.addClass("isSelected");
+                    //var marker = L.marker([lat, lng]).addTo(markerGroup);
+                    var marker;
+                    if(lat && lng)
+                    {
+                    marker = L.circleMarker([lat,lng], {
+                        color: 'blue',
+                        fillColor: '#03f',
+                        fillOpacity: 0.5,
+                        radius: 10
+                    });
+                    }
+                    else
+                    {
+                    marker = L.circleMarker([-45.874413300, 170.503119400], {
+                        color: 'red',
+                        fillColor: '#f03',
+                        fillOpacity: 0.5,
+                        radius: 10
+                    });
+                    }
+
+                    marker.customer = customer;
+
+                    marker.on('mousedown', function (event) {
+                    //L.DomEvent.stop(event);
+                    currMarker = this;
+                    mymap.dragging.disable();
+                    let {lat: circleStartingLat, lng: circleStartingLng} = marker._latlng;
+                    let {lat: mouseStartingLat, lng: mouseStartingLng} = event.latlng;
+
+                    mymap.on('mousemove', event => {
+                        let {lat: mouseNewLat, lng: mouseNewLng} = event.latlng;
+                        let latDifference = mouseStartingLat - mouseNewLat;
+                        let lngDifference = mouseStartingLng - mouseNewLng;
+
+                        let center = [circleStartingLat-latDifference, circleStartingLng-lngDifference];
+                        marker.setLatLng(center);
+                    });
+                    });
+
+                    marker.addTo(markerGroup);
+                    marker.bindPopup(self.html());
+                    self.data("id",marker._leaflet_id);
+                }
+            }
+            });
+        });

@@ -1,0 +1,430 @@
+extends layout
+
+block content
+
+  div.container
+
+    div.row
+      div.twelve.columns
+        button#showForm.button-primary Add new
+        
+        - var searchFields = ["Customer ID", "Name", "Phone Number", "Email", "Address"];
+
+        div.three.columns(style="position:absolute;top:0rem;right:0rem;")
+          input#searchInput.u-full-width(type="text" name="search" placeholder="Search customers ...")
+
+        div.two.columns(style="position:absolute;top:0rem;right:35rem;")
+          //-label(for="searchFieldSelector") Search By
+          select#searchFieldSelector.u-full-width(name="searchField" required)
+              for searchField in searchFields
+                  option(value= searchField)= searchField   
+
+        //- the oninput attribute prevents other unwelcome characters being entered, such as characters and negative numbers
+        div.two.columns(style="position:absolute;top:0rem;right:60rem;")
+          input#limitInput.u-full-width(type="number" min=0 max=10000 oninput="validity.valid||(value='');" placeholder="Limit customers ...")
+
+        if (inactive_customer_list && inactive_customer_list.length > 0)
+            span(style='margin-right:5px;')
+            button#showForm.button-secondary(class="showInactiveCustomers" href="#" data-id= inactive_customer_list.id) Restore
+        
+    div.row
+
+      div#addNewForm.twelve.columns(style="display:none")
+        form#addCustomerForm(action="/customers/new" method="POST")
+          include customer_form.pug
+
+      div#addNewForm.twelve.columns(style="display:none")
+        form#restoreCustomerForm(action="/customers/new" method="POST")
+          include customer_restore.pug
+          
+    div.row
+      div#customerInformation.twelve.columns
+        if (customer_list && customer_list.length > 0)
+          include customer_output.pug
+        else
+          div No customers
+	
+  script(type="text/javascript").
+
+    $(function(){
+
+        var lat, lng = "";
+        function split( val ) {
+          return val.split( /,\s*/ );
+        }
+
+        function extractLast( term ) {
+          return split( term ).pop();
+        }
+
+        $("#showForm").on("click", function(){
+            var $addNewForm = $("#addNewForm");
+            if($addNewForm.is(":hidden"))
+                $addNewForm.slideDown();
+            else
+                $addNewForm.slideUp();
+        });
+
+        $(document).on("click",".ms-options input[type=checkbox]", function(){
+            var count = $(this).parents('.ms-options').find('input[type=checkbox]:checked').length;
+            $(this).parents('tr').find('span.count').text(count);
+        });
+
+        $(document).on("click","input[type=radio]", function () {
+            var name = $(this).attr("name");
+            $("input[name=" + name + "]").parents('label').removeClass("isSelected");
+            $(this).parent().toggleClass("isSelected");
+        });
+
+        $('select[multiple]').multiselect({
+            columns  : 3
+        });
+
+        // jquery function to check whether the maxlength for the particular input is complying with the relevant maxLength attribute
+        $("input").on("keyup keydown change",function() {
+          var maxLength = $(this).attr("maxlength");
+          if(maxLength == $(this).val().length) {
+              val=$(this).val().substr(0,$(this).val().length-1);
+              $(this).val(val);
+          }
+        });
+
+        // http://jqueryui.com/autocomplete/#remote
+        $("#addressInput").autocomplete({
+          source: function(req,res){
+            $.post("/customers/addresses", { term: req.term }, function(data){
+                var addresses = [];
+                $.each(data, function(i,e){
+                  addresses.push({label:e["address"], value:e["lat"]+","+e["lng"]});
+                });
+                res(addresses);
+            });
+          },
+          search: function() {
+            // custom minLength
+            $("span.addressCheckBox").remove();
+            $("input[name=lat]").val("");
+            $("input[name=lng]").val("");
+            var term = extractLast( this.value );
+            if ( term.length < 3 ) {
+              return false;
+            }
+          },
+          focus: function(event, ui) { 
+            event.preventDefault(); // required to stop the coordinates from appearing
+            $("#addressInput").val(ui.item.label);
+          },
+          select: function(event, ui) {
+            event.preventDefault();
+            $(event.target).val(ui.item.label);
+            let span = $("<span class='addressCheckBox'></span>").addClass("icofont icofont-check-circled positionAbsolute");
+            $(event.target).parent(".six.columns").append(span);
+            var coords = ui.item.value.split(",");
+            $("input[name=lat]").val(coords[0]);
+            $("input[name=lng]").val(coords[1]);
+          }
+        });
+
+        // checks to see whether the address input is empty or not
+        // if it is, the checkbox on the right hand side of the input will be removed
+        $('body').on('input', "#addressInput", function() {
+          if(!$(this).val().length) {
+            $("span.addressCheckBox").remove();
+          }
+        });
+
+        $(document).on("click", ".editCustomer", function () {
+          var self = $(this);
+          var id = self.data("id");
+          $.get("/customers/edit/"+id,function(resp){
+            var form = $("<form/>").attr("id","editCustomerForm").attr("method","POST").attr("action","/customers/update").append(resp);
+            var div = $("<div class='popup'/>").append(form);
+            div.appendTo("body");
+            $('select[multiple]').multiselect({
+              columns: 3
+            });
+          });
+        });
+
+        $(document).on("click", ".showInactiveCustomers", function () {
+          var self = $(this);
+          var id = self.data("id");
+          $.get("/customers/showInactiveCustomers/"+id,function(resp){
+            var form = $("<form/>").attr("id","restoreCustomerForm").attr("method","POST").attr("action","/customers/restore").append(resp);
+            var div = $("<div class='popup'/>").append(form);
+            div.appendTo("body");
+            $('select[multiple]').multiselect({
+              columns: 3
+            });
+          });
+        });
+
+        $(document).on("click", ".cancel", function () {
+            $(".popup").remove();
+        });
+
+          // checks to see whether the limit textbox is empty, and sends back a response to the relevant routes, filling the rows again
+          $('body').on('input', "#limitInput", function() {
+            if(!$(this).val().length) {
+              $.post("/customers/limit", { term: 10000 }, function(data){
+                  $('#customerInformation').empty().append(data);
+              });
+              $.post("/customers/updateLimitCount", { term: 10000 }, function(data){
+                  $('.customerCount').empty().append(data);
+              });
+            }
+          });
+
+          // retrieves input from the limit textbox and sends data via POST requests to update the Customers page accordingly
+          $("#limitInput").autocomplete({
+          source: function(req,res){
+              $.post("/customers/limit", { term: req.term }, function(data){
+                  $('#customerInformation').empty().append(data);
+              });
+              $.post("/customers/updateLimitCount", { term: req.term }, function(data){
+                  $('.customerCount').empty().append(data);
+              });
+            },
+          });
+
+          // function from https://stackoverflow.com/questions/41088046/jquery-live-check-if-input-has-value
+          // if the search input is empty, it'll post this to their relevant routes in the customers.js file
+          // which will render all the customers by default, including updating the title count, rather than leaving
+          // the most recent suggestions to still appear
+          $('body').on('input', "#searchInput", function() {
+            if(!$(this).val().length) {
+              $.post("/customers/updateCustomerRows", { term: $('#searchInput').val() }, function(data){
+                $('#customerInformation').empty().append(data);
+              });
+              $.post("/customers/updateSearchCount", { term: $('#searchInput').val() }, function(data){
+                $('.customerCount').empty().append(data);
+              });
+            }
+            $("span.searchCheckBox").remove();
+          });
+
+          // function to remove the current search query and checkbox marker from the search input whenever 
+          // a change is detected in the limit input, including if the user modifies it via the small arrows on the right hand side
+          $('#limitInput').on('change keyup', function(){
+              $("#searchInput").val("");
+              $("span.searchCheckBox").remove();
+          });
+
+          // function to remove the current limit query from the limit input box whenever a new search query is typed in
+          $('#searchInput').keyup(function(){
+              $("#limitInput").val("");
+          });
+
+          // function from https://stackoverflow.com/questions/19528531/detect-with-jquery-when-a-select-changes
+          // removes the current search from the search box whenever a new field is selected, along with the checkbox marker
+          $('#searchFieldSelector').change(function(){
+              $("#searchInput").val("");
+              $("span.searchCheckBox").remove();
+          });
+ 
+
+        // Jquery autocomplete widget. Its purpose is to provide the functionality for searching customers
+        // Throughout the widget, multiple POST statements are sent to their corresponding routes in the customer.js file
+        // The suggestions are then rendered below the search customer textbox
+        // There is a switch statement that determines which field the user is intending to search on, and the suggestions adjust accordingly
+        $("#searchInput").autocomplete({
+          source: function(req,res){
+            //switch($('#searchFieldSelector :selected').text());
+            switch($('#searchFieldSelector').val())
+            {
+              case "Customer ID":
+
+                  $.post("/customers/search", { term: req.term, params: 1 }, function(data){
+                    var suggestions = [];
+                    
+                    $.each(data, function(i,e){
+                      suggestions.push({label:e["customerNumber"], value:e["customerNumber"]}); // pushes the contents of the database output into the suggestions array
+                    });
+                    
+                    res(suggestions); // renders the suggestions to the search box 
+
+
+                  });
+
+              break;
+
+              case "Name":
+
+                $.post("/customers/search", { term: req.term, params: 2 }, function(data){
+                  var suggestions = [];
+                  $.each(data, function(i,e){
+                    suggestions.push({label:e["customerName"], value:e["lastName"]+", "+e["firstName"]}); // pushes the contents of the database output into the suggestions array
+                  });
+                  res(suggestions); // renders the suggestions to the search box
+                });
+
+              break;
+
+              case "Phone Number":
+
+                $.post("/customers/search", { term: req.term, params: 3 }, function(data){
+                  var suggestions = [];
+                  $.each(data, function(i,e){
+                    suggestions.push({label:e["phone_number"], value:e["phone_number"]}); // pushes the contents of the database output into the suggestions array
+                  });
+                  res(suggestions); // renders the suggestions to the search box
+                });
+
+              break;
+
+              case "Email":
+
+                $.post("/customers/search", { term: req.term, params: 4 }, function(data){
+                  var suggestions = [];
+                  $.each(data, function(i,e){
+                    suggestions.push({label:e["email"], value:e["email"]}); // pushes the contents of the database output into the suggestions array
+                  });
+                  res(suggestions); // renders the suggestions to the search box
+                });
+              
+                break;
+              
+              case "Address":
+              
+                $.post("/customers/search", { term: req.term, params: 5 }, function(data){
+                  var suggestions = [];
+                  $.each(data, function(i,e){
+                    suggestions.push({label:e["address"], value:e["address"]}); // pushes the contents of the database output into the suggestions array
+                  });
+                  res(suggestions); // renders the suggestions to the search box
+                });
+
+                break;
+            }
+          },
+          search: function(req, res) { // this event occurs whenever the user is typing in the search box, except when they remove their query fully
+
+          switch ($('#searchFieldSelector').val()) 
+          {
+              case "Customer ID":
+
+                  $.post("/customers/updateCustomerRows", { term: $('#searchInput').val(), params: 1}, function(data) {
+                      $('#customerInformation').empty().append(data);
+                  });
+                  $.post("/customers/updateSearchCount", { term: $('#searchInput').val(), params: 1}, function(data) {
+                      $('.customerCount').empty().append(data);
+                  });
+
+              break;
+
+              case "Name":
+
+                  $.post("/customers/updateCustomerRows", { term: $('#searchInput').val(), params: 2}, function(data) {
+                      $('#customerInformation').empty().append(data);
+                  });
+                  $.post("/customers/updateSearchCount", { term: $('#searchInput').val(), params: 2}, function(data) {
+                      $('.customerCount').empty().append(data);
+                  });
+
+              break;
+
+              case "Phone Number":
+
+                  $.post("/customers/updateCustomerRows", { term: $('#searchInput').val(), params: 3}, function(data) {
+                      $('#customerInformation').empty().append(data);
+                  });
+                  $.post("/customers/updateSearchCount", { term: $('#searchInput').val(), params: 3}, function(data) {
+                      $('.customerCount').empty().append(data);
+                  });
+
+              break;
+
+              case "Email":
+
+                  $.post("/customers/updateCustomerRows", { term: $('#searchInput').val(), params: 4}, function(data) {
+                      $('#customerInformation').empty().append(data);
+                  });
+                  $.post("/customers/updateSearchCount", { term: $('#searchInput').val(), params: 4}, function(data) {
+                      $('.customerCount').empty().append(data);
+                  });
+
+              break;
+
+              case "Address":
+
+                  $.post("/customers/updateCustomerRows", { term: $('#searchInput').val(), params: 5}, function(data) {
+                      $('#customerInformation').empty().append(data);
+                  });
+                  $.post("/customers/updateSearchCount", { term: $('#searchInput').val(), params: 5}, function(data) {
+                      $('.customerCount').empty().append(data);
+                  });
+
+              break;
+            }
+            // custom minLength
+            $("span.searchCheckBox").remove();
+            var term = extractLast( this.value );
+            if ( term.length < 1 ) { // is used to check the length of the present input. Can be made higher to produce more relevant results, albeit having a less interactive feel
+              return false;
+            }
+          },
+          select: function(event, ui) { // this event occurs whenever the user selects a suggestion
+         switch ($('#searchFieldSelector').val()) 
+          {
+              case "Customer ID":
+
+                  $.post("/customers/updateCustomerRows", { term: ui.item.label, params: 1}, function(data) {
+                      $('#customerInformation').empty().append(data);
+                  });
+                  $.post("/customers/updateSearchCount", { term: ui.item.label, params: 1}, function(data) {
+                      $('.customerCount').empty().append(data);
+                  });
+
+              break;
+
+              case "Name":
+
+                  $.post("/customers/updateCustomerRows", { term: ui.item.label, params: 2}, function(data) {
+                      $('#customerInformation').empty().append(data);
+                  });
+                  $.post("/customers/updateSearchCount", { term: ui.item.label, params: 2}, function(data) {
+                      $('.customerCount').empty().append(data);
+                  });
+
+              break;
+
+              case "Phone Number":
+
+                  $.post("/customers/updateCustomerRows", { term: ui.item.label, params: 3}, function(data) {
+                      $('#customerInformation').empty().append(data);
+                  });
+                  $.post("/customers/updateSearchCount", { term: ui.item.label, params: 3}, function(data) {
+                      $('.customerCount').empty().append(data);
+                  });
+
+              break;
+
+              case "Email":
+
+                  $.post("/customers/updateCustomerRows", { term: ui.item.label, params: 4}, function(data) {
+                      $('#customerInformation').empty().append(data);
+                  });
+                  $.post("/customers/updateSearchCount", { term: ui.item.label, params: 4}, function(data) {
+                      $('.customerCount').empty().append(data);
+                  });
+
+              break;
+
+              case "Address":
+
+                  $.post("/customers/updateCustomerRows", { term: ui.item.label, params: 5}, function(data) {
+                      $('#customerInformation').empty().append(data);
+                  });
+                  $.post("/customers/updateSearchCount", { term: ui.item.label, params: 5}, function(data) {
+                      $('.customerCount').empty().append(data);
+                  });
+
+              break;
+            }
+            event.preventDefault();
+            $(event.target).val(ui.item.label); // assigns the selected suggestion to the search field
+            let span = $("<span class='searchCheckBox'></span>").addClass("icofont icofont-check-circled positionAbsolute");
+            $(event.target).parent(".three.columns").append(span); // appends a small checkbox to the right side of the search field
+          },
+        });
+    });

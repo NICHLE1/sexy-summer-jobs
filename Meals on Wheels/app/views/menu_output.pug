@@ -1,0 +1,32 @@
+table.u-full-width
+          thead
+            tr
+              th Week
+              th Day
+              th Date
+              th Meat/Main
+              th Sides/Vegetables
+              th Dessert
+              th Alternative
+              th Vegetarian
+              th Soup
+              th Actions
+          tbody
+            each menu in menu_list
+              tr
+                td= menu.week
+                td= menu.day
+                td= moment(weekStarts, "D MMM YYYY").add(moment.weekdays().indexOf(menu.day)+((menu.week-1)*7),'days').format("D MMM YYYY")
+                td= menu.meat
+                td= menu.vegetable.replace(/,/g, ", ")
+                td= menu.dessert
+                td= menu.alternative
+                td= menu.vegetarian
+                td= menu.soup
+                td
+                    a(class="editMenu" href="#" data-id= menu.id)
+                      i.fas.fa-edit
+                    span &nbsp;&nbsp;
+                    span &nbsp;&nbsp;
+                    a(href="/menu/delete/" + menu.id)
+                      i.fas.fa-trash-alt

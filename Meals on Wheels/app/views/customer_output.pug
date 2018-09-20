@@ -1,0 +1,39 @@
+table.u-full-width
+    thead
+        tr
+        th Customer ID
+        th Title
+        th Name
+        th Phone number
+        th Email
+        th Restrictions
+        th Modify
+    tbody
+        each customer in customer_list
+            tr
+                td= customer.customerNumber
+                td= customer.title
+                td= customer.firstName ? customer.lastName + ", " + customer.firstName : customer.lastName
+                td= customer.phone_number
+                td
+                    a(href=`mailto:`+customer.email)= customer.email
+                td
+                    if customer.type
+                        if customer.type.indexOf('vegetarian') != -1
+                        i.icofont.icofont-broccoli(style="font-size:2rem;color:green" title="Vegetarian")
+                        if customer.type.indexOf('alternative') != -1
+                        i.icofont.icofont-direction-sign(style="font-size:2rem" title="Alternative meal")
+                    if customer.options
+                        if customer.options.indexOf('lactose') != -1 || customer.options.indexOf('dairy') != -1
+                        i.icofont.icofont-milk(style="font-size:2rem;color:firebrick" title="Lactose intolerant or dairy free")
+                        if customer.options.indexOf('diabetic') != -1
+                        i.icofont.icofont-candy(style="font-size:2rem;color:firebrick" title="Diabetic")
+                        if customer.options.indexOf('puree') != -1
+                        i.icofont.icofont-sof-drinks(style="font-size:2rem;color:firebrick" title="Puree meal/meat")
+                td
+                    a(class="editCustomer" onclick="event.preventDefault();" href="#" data-id= customer.id) 
+                        i.fas.fa-user-edit
+                    span &nbsp;&nbsp;
+                    span &nbsp;&nbsp;
+                    a(href="/customers/delete/" + customer.id)
+                        i.fas.fa-trash-alt

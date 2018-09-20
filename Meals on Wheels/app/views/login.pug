@@ -1,0 +1,50 @@
+html
+  head
+    meta(charset='UTF-8')
+    title Meals on Wheels
+    link(rel='stylesheet', href='//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css')
+  body#clrblk
+    .container
+      #loginbox.mainbox.col-md-6.col-md-offset-3.col-sm-8.col-sm-offset-2(style='margin-top:50px;')
+        .panel.panel-info
+          .panel-heading
+            .panel-title Sign In
+            // <div style="float:right; font-size: 80%; position: relative; top:-10px"><a href="#">Forgot password?</a></div>
+          .panel-body(style='padding-top:30px')
+            form#loginform.form-horizontal(role='form', method='post', action='/login')
+              .input-group(style='margin-bottom: 25px')
+                span.input-group-addon
+                  i.glyphicon.glyphicon-user
+                input#login-username.form-control(type='text', name='user_name', value='', placeholder='username')
+              .input-group(style='margin-bottom: 25px')
+                span.input-group-addon
+                  i.glyphicon.glyphicon-lock
+                input#login-password.form-control(type='password', name='password', placeholder='password')
+              .input-group
+                //
+                  <div class="checkbox">
+                  <label>
+                  <input id="login-remember" type="checkbox" name="remember" value="1"> Remember me
+                  </label>
+                  </div>
+              .form-group(style='margin-top:10px')
+                // Button
+                .col-sm-12.controls
+                  button#btn-login.btn.btn-success(type='submit') Login  
+              // disabled .form-group
+                .col-md-12.control
+                  div(style='border-top: 1px solid#888; padding-top:15px; font-size:85%')
+                    | Don't have an account!
+                    a(href='/signup')
+                      | Sign Up Here
+  script(type="text/javascript").
+
+    $(function(){
+
+      function noback(){window.history.forward();}
+      noback();
+      window.onload=noback;
+      window.onpageshow=function(evt){if(evt.persisted)noback();}
+      window.onunload=function(){void(0);}
+
+    });
